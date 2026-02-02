@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: weather-envs
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/benascher/platform_engineering.git
+        revision: main
+        directories:
+          - path: envs/*
+  template:
+    metadata:
+      name: '{{path.basename}}-weather'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/benascher/platform_engineering.git
+        targetRevision: main
+        path: charts/weather-app
+        helm:
+          valueFiles:
+            - ../../envs/{{path.basename}}/values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
